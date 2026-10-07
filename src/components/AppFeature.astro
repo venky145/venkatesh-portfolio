@@ -1,0 +1,168 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import AppStoreLink from "./AppStoreLink.astro";
+
+interface Props {
+  project: CollectionEntry<"projects">;
+  flip?: boolean;
+  tone?: number;
+}
+
+const { project, flip = false, tone = 1 } = Astro.props;
+const {
+  title,
+  kind,
+  summary,
+  tagline,
+  context,
+  role,
+  status,
+  technologies = [],
+  frame = "screen",
+  image,
+  imageFit = "cover",
+  logos = [],
+  screenshots = [],
+  workedOn = [],
+  links = [],
+} = project.data;
+const hasStory = Boolean(project.body?.trim());
+const Story = hasStory ? (await render(project)).Content : null;
+
+const kindLabel = kind === "professional" ? "Professional" : "Personal";
+const shots = screenshots.map((shot) => ({ ...shot, frame }));
+const hero = image ?? screenshots[0]?.src;
+const heroAlt = screenshots.find((shot) => shot.src === hero)?.alt ?? `${title}`;
+---
+
+<article
+  class:list={["feature", { flip, "is-study": hasStory }]}
+  id={project.id}
+  data-kind={kind}
+>
+  <div class="feature-grid">
+    <div
+      class:list={["feature-panel", "feature-visual", { "has-photo": Boolean(hero) }]}
+      data-tone={tone}
+    >
+      {
+        screenshots.length > 0 ? (
+          <div
+            class:list={["feature-stage", frame === "phone" && "is-phone-scroll"]}
+            data-stage
+            data-shots={JSON.stringify(shots)}
+          >
+            {
+              frame === "phone" ? (
+                <ul class="phone-scroll">
+                  {screenshots.map((shot) => (
+                    <li>
+                      <img src={shot.src} alt={shot.alt} />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <img class="feature-photo" src={screenshots[0].src} alt={screenshots[0].alt} />
+              )
+            }
+            <button type="button" class="stage-nav stage-prev" hidden aria-label="Previous image">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button type="button" class="stage-nav stage-next" hidden aria-label="Next image">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <div class="stage-dots" hidden></div>
+          </div>
+        ) : hero ? (
+          <img
+            class:list={["feature-photo", imageFit === "contain" && "is-contain", frame === "phone" && "is-phone"]}
+            src={hero}
+            alt={heroAlt}
+          />
+        ) : (
+          !logos.length && (
+            <div class:list={["device", { "device-phone": frame === "phone" }]}>
+              <div class="device-screen" aria-hidden="true">
+                <p class="device-kicker">{kindLabel}</p>
+                <p class="device-title">{title}</p>
+                <span class="device-bar" />
+                <span class="device-bar device-bar-short" />
+                <span class="device-block" />
+              </div>
+            </div>
+          )
+        )
+      }
+      {
+        logos.length > 0 && (
+          <ul class="logo-grid">
+            {logos.map((logo) => (
+              <li>
+                <img src={logo.src} alt={logo.alt} />
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+
+    <div class="feature-panel feature-copy">
+      <p class="kind-label">{kindLabel}</p>
+      <h2>{title}</h2>
+      {tagline && <p class="feature-tagline">{tagline}</p>}
+      <p class="context">{context}</p>
+      {role && <p class="feature-role">{role}</p>}
+      {status === "in-development" && <p class="feature-status">In Development</p>}
+
+      <div class="feature-scroll">
+        {
+          Story ? (
+            <div class="feature-story">
+              <Story />
+            </div>
+          ) : (
+            <div class="feature-block">
+              <h3>Details</h3>
+              <p>{summary}</p>
+            </div>
+          )
+        }
+
+        {
+          workedOn.length > 0 && (
+            <div class="feature-block">
+              <h3>What I did</h3>
+              <ul>
+                {workedOn.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+      </div>
+
+      {technologies.length > 0 && <p class="tech">{technologies.join(" · ")}</p>}
+
+      {
+        links.length > 0 && (
+          <p class="project-links">
+            {links.map((link) =>
+              link.href.includes("apps.apple.com") ? (
+                <AppStoreLink href={link.href} name={title} />
+              ) : (
+                <a href={link.href} rel="noreferrer">
+                  {link.label}
+                </a>
+              ),
+            )}
+          </p>
+        )
+      }
+    </div>
+  </div>
+</article>

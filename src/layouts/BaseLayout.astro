@@ -1,0 +1,88 @@
+---
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { engineeringAreas } from "../data/engineering";
+import { contactLinks, site } from "../data/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description = site.description } = Astro.props;
+const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.role}`;
+const sameAs = contactLinks()
+  .map((link) => link.href)
+  .filter((href) => href.startsWith("http"));
+
+const jsonLd: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: site.name,
+  jobTitle: site.role,
+  description: site.description,
+  knowsAbout: [...engineeringAreas],
+};
+
+if (sameAs.length > 0) {
+  jsonLd.sameAs = sameAs;
+}
+
+if (site.email) {
+  jsonLd.email = site.email;
+}
+
+if (site.phone) {
+  jsonLd.telephone = site.phone;
+}
+
+if (site.location) {
+  jsonLd.address = {
+    "@type": "PostalAddress",
+    addressCountry: site.location,
+  };
+}
+
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#fafaf8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <title>{pageTitle}</title>
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+    <Header />
+    <main id="content">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      const external = /^(https?:\/\/)?(www\.)?(linkedin\.com|github\.com|medium\.com|apps\.apple\.com)\b/i;
+      for (const anchor of document.querySelectorAll("a[href]")) {
+        const href = anchor.getAttribute("href") ?? "";
+        if (!external.test(href)) continue;
+        anchor.setAttribute("target", "_blank");
+        const rel = new Set(anchor.getAttribute("rel")?.split(/\s+/).filter(Boolean));
+        rel.add("noopener");
+        rel.add("noreferrer");
+        anchor.setAttribute("rel", [...rel].join(" "));
+      }
+    </script>
+  </body>
+</html>

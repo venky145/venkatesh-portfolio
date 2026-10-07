@@ -1,0 +1,104 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+export async function getStaticPaths() {
+  const projects = await getCollection("projects", ({ data }) => data.caseStudy);
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: CollectionEntry<"projects">;
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const { title, summary, context, role, company, timeframe, technologies, workedOn, challenges, impact, links } =
+  project.data;
+const hasOverview = Boolean(project.body?.trim());
+---
+
+<BaseLayout title={title} description={summary}>
+  <article class="case-study">
+    <div class="wrap">
+      <p class="back"><a href="/#work">Selected Work</a></p>
+      <h1>{title}</h1>
+      <p class="context">{context}</p>
+      {timeframe && <p class="context">{timeframe}</p>}
+      {company && <p class="context">{company}</p>}
+      {role && <p class="summary">{role}</p>}
+
+      {
+        hasOverview && (
+          <div class="prose detail">
+            <h2>Overview</h2>
+            <Content />
+          </div>
+        )
+      }
+
+      {
+        workedOn && workedOn.length > 0 && (
+          <section class="detail">
+            <h2>What I worked on</h2>
+            <ul>
+              {workedOn.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        challenges && challenges.length > 0 && (
+          <section class="detail">
+            <h2>Technical challenges</h2>
+            <ul>
+              {challenges.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        technologies.length > 0 && (
+          <section class="detail">
+            <h2>Technology</h2>
+            <p>{technologies.join(" · ")}</p>
+          </section>
+        )
+      }
+
+      {
+        impact && impact.length > 0 && (
+          <section class="detail">
+            <h2>Impact</h2>
+            <ul>
+              {impact.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        links && links.length > 0 && (
+          <p class="actions">
+            {links.map((link) => (
+              <a href={link.href} rel="noreferrer">
+                {link.label}
+              </a>
+            ))}
+          </p>
+        )
+      }
+    </div>
+  </article>
+</BaseLayout>

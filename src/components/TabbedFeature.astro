@@ -1,0 +1,110 @@
+---
+import type { AppTabGroup } from "../data/app-tabs";
+import AppStoreLink from "./AppStoreLink.astro";
+
+interface Props {
+  group: AppTabGroup;
+  tone?: number;
+  flip?: boolean;
+}
+
+const { group, tone = 1, flip = false } = Astro.props;
+const first = group.tabs[0];
+const phoneStage = first.screenshots?.[0]?.frame === "phone";
+const kindLabel = group.kind === "professional" ? "Professional" : "Personal";
+---
+
+<article class:list={["feature", { flip }]} id={group.id} data-kind={group.kind} data-tabs>
+  <div class="feature-grid">
+    <div class:list={["feature-panel", "feature-visual", "has-photo"]} data-tone={tone}>
+      <div class:list={["feature-stage", phoneStage && "is-phone-scroll"]} data-stage>
+        <img class="feature-photo tab-photo" src={first.image} alt={first.screenshots?.[0]?.alt ?? first.label} hidden={phoneStage} />
+        <ul class="phone-scroll" hidden={!phoneStage}>
+          {
+            phoneStage &&
+              first.screenshots?.map((shot) => (
+                <li>
+                  <img src={shot.src} alt={shot.alt} />
+                </li>
+              ))
+          }
+        </ul>
+        <button type="button" class="stage-nav stage-prev" hidden aria-label="Previous image">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button type="button" class="stage-nav stage-next" hidden aria-label="Next image">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <div class="stage-dots" hidden></div>
+      </div>
+    </div>
+    <div class="feature-panel feature-copy">
+      <p class="kind-label">{kindLabel}</p>
+      <div class="feature-tabs" role="tablist" aria-label={group.id} hidden={group.tabs.length < 2}>
+        {
+          group.tabs.map((tab, index) => (
+            <button
+              type="button"
+              role="tab"
+              id={`tab-${tab.id}`}
+              aria-selected={index === 0 ? "true" : "false"}
+              aria-controls={`panel-${tab.id}`}
+              data-shots={JSON.stringify(
+                tab.screenshots?.length
+                  ? tab.screenshots
+                  : [{ src: tab.image, alt: tab.label }],
+              )}
+            >
+              {tab.label}
+            </button>
+          ))
+        }
+      </div>
+      {
+        group.tabs.map((tab, index) => (
+          <div class="feature-body" role="tabpanel" id={`panel-${tab.id}`} hidden={index !== 0}>
+            <h2>{tab.label}</h2>
+            <p class="context">{tab.context}</p>
+            {tab.role && <p class="feature-role">{tab.role}</p>}
+            <div class="feature-scroll">
+              <div class="feature-block">
+                <h3>Details</h3>
+                <p>{tab.summary}</p>
+              </div>
+              {tab.workedOn && tab.workedOn.length > 0 && (
+                <div class="feature-block">
+                  <h3>What I did</h3>
+                  <ul>
+                    {tab.workedOn.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            {tab.technologies && tab.technologies.length > 0 && (
+              <p class="tech">{tab.technologies.join(" · ")}</p>
+            )}
+            {tab.links && tab.links.length > 0 && (
+              <p class="project-links">
+                {tab.links.map((link) =>
+                  link.href.includes("apps.apple.com") ? (
+                    <AppStoreLink href={link.href} name={tab.label} />
+                  ) : (
+                    <a href={link.href} rel="noreferrer">
+                      {link.label}
+                    </a>
+                  ),
+                )}
+              </p>
+            )}
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</article>

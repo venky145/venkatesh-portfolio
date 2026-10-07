@@ -1,0 +1,12 @@
+---
+import { engineeringAreas } from "../data/engineering";
+---
+
+<section id="engineering" aria-labelledby="engineering-title">
+  <div class="wrap">
+    <h2 id="engineering-title">Engineering</h2>
+    <ul class="areas">
+      {engineeringAreas.map((area) => <li>{area}</li>)}
+    </ul>
+  </div>
+</section>

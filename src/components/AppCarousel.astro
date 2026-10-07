@@ -1,0 +1,93 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  projects: CollectionEntry<"projects">[];
+}
+
+const { projects } = Astro.props;
+
+const kindLabel = {
+  professional: "Professional",
+  personal: "Personal",
+} as const;
+---
+
+<div class="apps-head">
+  <div>
+    <h1 id="apps-title">Apps</h1>
+    <p class="apps-lead">Professional work and personal products, in one place.</p>
+    <div class="filters" role="group" aria-label="Filter apps">
+      <button type="button" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-filter="professional" aria-pressed="false">Professional</button>
+      <button type="button" data-filter="personal" aria-pressed="false">Personal</button>
+    </div>
+  </div>
+  <div class="carousel-controls">
+    <button type="button" data-carousel="prev" aria-label="Previous apps">
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </button>
+    <button type="button" data-carousel="next" aria-label="Next apps">
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<div class="carousel-viewport">
+  <ul class="carousel-track">
+    {
+      projects.map((project, index) => {
+        const photo = project.data.image ?? project.data.logos?.[0]?.src;
+        const photoAlt = project.data.logos?.find((logo) => logo.src === photo)?.alt ?? project.data.title;
+        const marks = !project.data.image ? (project.data.logos ?? []).slice(0, 4) : [];
+        return (
+          <li data-kind={project.data.kind}>
+            <a
+              class="app-card"
+              href={`#${project.id === "nagra-streaming" ? "sports-ott" : project.id}`}
+              data-tone={(index % 7) + 1}
+            >
+              {photo && !marks.length ? (
+                <img
+                  class:list={["app-card-photo", project.data.imageFit === "contain" && "is-contain"]}
+                  src={photo}
+                  alt={photoAlt}
+                />
+              ) : marks.length > 0 ? (
+                <span class="app-card-logos">
+                  {marks.map((logo) => (
+                    <img src={logo.src} alt={logo.alt} />
+                  ))}
+                </span>
+              ) : (
+                <span class="app-card-mark" aria-hidden="true" />
+              )}
+              {
+                project.data.tagline ? (
+                  <>
+                    <span class="app-card-title">{project.data.title}</span>
+                    <span class="app-card-lead">{project.data.tagline}</span>
+                    <span class="context">{project.data.context}</span>
+                    {project.data.status === "in-development" && (
+                      <span class="app-card-status">In Development →</span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span class="kind-label">{kindLabel[project.data.kind]}</span>
+                    <span class="app-card-title">{project.data.title}</span>
+                    <span class="context">{project.data.context}</span>
+                  </>
+                )
+              }
+            </a>
+          </li>
+        );
+      })
+    }
+  </ul>
+</div>

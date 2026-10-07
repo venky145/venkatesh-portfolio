@@ -1,0 +1,29 @@
+---
+import About from "../components/About.astro";
+import Contact from "../components/Contact.astro";
+import Engineering from "../components/Engineering.astro";
+import Experience from "../components/Experience.astro";
+import Hero from "../components/Hero.astro";
+import WorkSection from "../components/WorkSection.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="About">
+  <div class="subnav-bar">
+    <div class="wrap">
+      <nav class="nav" aria-label="On this page">
+        <a href="#work">Work</a>
+        <a href="#experience">Experience</a>
+        <a href="#engineering">Engineering</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+  </div>
+  <Hero />
+  <WorkSection />
+  <Experience />
+  <Engineering />
+  <About />
+  <Contact />
+</BaseLayout>

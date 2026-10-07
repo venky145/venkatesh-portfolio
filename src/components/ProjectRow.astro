@@ -1,0 +1,39 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  project: CollectionEntry<"projects">;
+}
+
+const { project } = Astro.props;
+const { title, summary, context, technologies = [], caseStudy, links = [] } = project.data;
+---
+
+<article class="project">
+  <div>
+    <h3>{title}</h3>
+    <p class="context">{context}</p>
+  </div>
+  <div>
+    <p class="summary">{summary}</p>
+    {technologies.length > 0 && <p class="tech">{technologies.join(" · ")}</p>}
+    {
+      links.length > 0 && (
+        <p class="project-links">
+          {links.map((link) => (
+            <a href={link.href} rel="noreferrer">
+              {link.label}
+            </a>
+          ))}
+        </p>
+      )
+    }
+    {
+      caseStudy && (
+        <a class="case-link" href={`/work/${project.id}`}>
+          Case study
+        </a>
+      )
+    }
+  </div>
+</article>

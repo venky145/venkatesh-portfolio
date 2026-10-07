@@ -1,0 +1,278 @@
+---
+import { getCollection } from "astro:content";
+import AppCarousel from "../components/AppCarousel.astro";
+import AppFeature from "../components/AppFeature.astro";
+import TabbedFeature from "../components/TabbedFeature.astro";
+import AppStoreLink from "../components/AppStoreLink.astro";
+import { fintechTabs, livesmartTabs, ottTabs, tokenTabs } from "../data/app-tabs";
+import { clients } from "../data/clients";
+import { companies } from "../data/companies";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const projects = (await getCollection("projects", ({ data }) => data.featured)).sort((a, b) => {
+  if (a.data.kind !== b.data.kind) {
+    return a.data.kind === "professional" ? -1 : 1;
+  }
+  return (a.data.order ?? 0) - (b.data.order ?? 0);
+});
+
+const skipped = new Set(["nagra-streaming", "fintech"]);
+const placedLater = new Set(["senior-life", "wearables"]);
+const featureProjects = projects.filter(
+  (project) => !skipped.has(project.id) && !placedLater.has(project.id),
+);
+const laterProjects = projects.filter((project) => placedLater.has(project.id));
+const professionalFeatures = featureProjects.filter((project) => project.data.kind === "professional");
+const personalFeatures = featureProjects.filter((project) => project.data.kind === "personal");
+---
+
+<BaseLayout>
+  <section id="apps" aria-labelledby="apps-title">
+    <div class="wrap">
+      <div class="home-intro">
+        <p>
+          12+ years building iOS, tvOS and React Native apps:<br />
+          streaming for millions, regulated banking, crypto wallets and IoT.
+        </p>
+      </div>
+      <div class="company-strip">
+        <p class="kind-label">Companies I've worked for</p>
+        <ul class="company-row">
+          {
+            companies.map((company) => (
+              <li>
+                <img src={company.src} alt={company.name} />
+                {company.app && <AppStoreLink href={company.app} name={company.name} compact />}
+                {company.apps && (
+                  <span class="store-marks">
+                    {company.apps.map((app) => (
+                      <AppStoreLink href={app.href} name={app.name} compact />
+                    ))}
+                  </span>
+                )}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="company-strip client-strip">
+        <p class="kind-label">Clients I've worked with</p>
+        <ul class="company-row">
+          {
+            clients.map((client) => (
+              <li>
+                <img src={client.src} alt={client.name} />
+                {client.app && <AppStoreLink href={client.app} name={client.name} compact />}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <AppCarousel projects={projects} />
+      <div class="features">
+        <TabbedFeature group={ottTabs} tone={1} />
+        {
+          professionalFeatures.map((project) => (
+            <AppFeature project={project} flip tone={2} />
+          ))
+        }
+        <TabbedFeature group={fintechTabs} flip tone={3} />
+      <TabbedFeature group={tokenTabs} tone={4} />
+      <TabbedFeature group={livesmartTabs} flip tone={5} />
+        {
+          laterProjects.map((project, index) => (
+            <AppFeature project={project} flip={index % 2 === 1} tone={index + 6} />
+          ))
+        }
+        {
+          personalFeatures.map((project, index) => (
+            <AppFeature project={project} flip={index % 2 === 0} tone={(index % 7) + 4} />
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="home-close" aria-labelledby="more-title">
+    <div class="wrap">
+      <h2 id="more-title">Learn more about my experience</h2>
+      <p class="apps-lead">Roles, engineering, and how to reach me.</p>
+      <p class="actions">
+        <a href="/about">About me</a>
+        <a href="/about#contact">Contact me</a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const track = document.querySelector<HTMLElement>(".carousel-track");
+  const filters = document.querySelectorAll<HTMLButtonElement>(".filters [data-filter]");
+
+  function applyFilter(kind: string) {
+    document.querySelectorAll<HTMLElement>("[data-kind]").forEach((element) => {
+      const match = kind === "all" || element.dataset.kind === kind;
+      element.hidden = !match;
+    });
+
+    filters.forEach((button) => {
+      button.setAttribute("aria-pressed", button.dataset.filter === kind ? "true" : "false");
+    });
+
+    const visible = [...document.querySelectorAll<HTMLElement>(".feature")].filter(
+      (element) => !element.hidden,
+    );
+    visible.forEach((element, index) => {
+      element.classList.toggle("flip", index % 2 === 1);
+    });
+
+    track?.scrollTo({ left: 0 });
+  }
+
+  filters.forEach((button) => {
+    button.addEventListener("click", () => {
+      const kind = button.dataset.filter;
+      if (kind) applyFilter(kind);
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-carousel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!track) return;
+      const card = track.querySelector<HTMLElement>("li:not([hidden]) .app-card");
+      const distance = card ? card.getBoundingClientRect().width + 14 : 280;
+      const direction = button.dataset.carousel === "next" ? 1 : -1;
+      track.scrollBy({ left: direction * distance, behavior: "smooth" });
+    });
+  });
+
+  type Shot = { src: string; alt?: string; frame?: string };
+
+  function readShots(raw: string | undefined): Shot[] {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw) as Shot[];
+      return Array.isArray(parsed) ? parsed.filter((shot) => shot?.src) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function attachStage(stage: HTMLElement) {
+    const photo = stage.querySelector<HTMLImageElement>(":scope > .feature-photo");
+    const scroller = stage.querySelector<HTMLElement>(".phone-scroll");
+    const prev = stage.querySelector<HTMLButtonElement>(".stage-prev");
+    const next = stage.querySelector<HTMLButtonElement>(".stage-next");
+    const dots = stage.querySelector<HTMLElement>(".stage-dots");
+    let shots: Shot[] = [];
+    let index = 0;
+
+    function renderPhoneScroll() {
+      if (!scroller) return;
+      scroller.replaceChildren();
+      shots.forEach((shot) => {
+        const item = document.createElement("li");
+        const image = document.createElement("img");
+        image.src = shot.src;
+        image.alt = shot.alt ?? "";
+        item.append(image);
+        scroller.append(item);
+      });
+      scroller.scrollLeft = 0;
+    }
+
+    function render() {
+      const phoneScroll = shots.length > 1 && shots.every((shot) => shot.frame === "phone");
+      stage.classList.toggle("is-phone-scroll", phoneScroll);
+      if (scroller) scroller.hidden = !phoneScroll;
+      if (photo) photo.hidden = phoneScroll;
+      if (phoneScroll) {
+        if (prev) prev.hidden = true;
+        if (next) next.hidden = true;
+        if (dots) dots.hidden = true;
+        stage.classList.remove("has-nav");
+        renderPhoneScroll();
+        return;
+      }
+
+      const shot = shots[index];
+      if (!photo || !shot) return;
+      photo.src = shot.src;
+      photo.alt = shot.alt ?? "";
+      const multiple = shots.length > 1;
+      stage.classList.toggle("has-nav", multiple);
+      if (prev) prev.hidden = !multiple;
+      if (next) next.hidden = !multiple;
+      if (!dots) return;
+      dots.hidden = !multiple;
+      dots.replaceChildren();
+      if (!multiple) return;
+      shots.forEach((item, itemIndex) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.setAttribute("aria-label", `Image ${itemIndex + 1} of ${shots.length}`);
+        if (itemIndex === index) dot.setAttribute("aria-current", "true");
+        dot.addEventListener("click", () => {
+          index = itemIndex;
+          render();
+        });
+        dots.append(dot);
+      });
+    }
+
+    prev?.addEventListener("click", () => {
+      if (shots.length < 2) return;
+      index = (index - 1 + shots.length) % shots.length;
+      render();
+    });
+    next?.addEventListener("click", () => {
+      if (shots.length < 2) return;
+      index = (index + 1) % shots.length;
+      render();
+    });
+
+    return {
+      setShots(nextShots: Shot[]) {
+        shots = nextShots;
+        index = 0;
+        render();
+      },
+    };
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-tabs]").forEach((root) => {
+    const tabButtons = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panels = [...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+    const stage = root.querySelector<HTMLElement>("[data-stage]");
+    const viewer = stage ? attachStage(stage) : null;
+
+    tabButtons.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        tabButtons.forEach((button, buttonIndex) => {
+          const selected = button === tab;
+          button.setAttribute("aria-selected", selected ? "true" : "false");
+          panels[buttonIndex].hidden = !selected;
+        });
+        viewer?.setShots(readShots(tab.dataset.shots));
+      });
+    });
+
+    const selected = tabButtons.find((tab) => tab.getAttribute("aria-selected") === "true");
+    if (selected) viewer?.setShots(readShots(selected.dataset.shots));
+  });
+
+  document.querySelectorAll<HTMLElement>("[data-stage][data-shots]").forEach((stage) => {
+    if (stage.closest("[data-tabs]")) return;
+    attachStage(stage).setShots(readShots(stage.dataset.shots));
+  });
+
+  function openTabFromHash() {
+    const id = location.hash.replace("#", "");
+    const tab = id ? document.getElementById(id) : null;
+    if (tab?.getAttribute("role") !== "tab") return;
+    tab.click();
+  }
+
+  openTabFromHash();
+  window.addEventListener("hashchange", openTabFromHash);
+</script>

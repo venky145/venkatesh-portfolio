@@ -1,0 +1,50 @@
+---
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { site } from "../data/site";
+
+const photo = ["portrait.jpg", "portrait.jpeg", "portrait.png", "portrait.webp"].find((file) =>
+  existsSync(join(process.cwd(), "public", file)),
+);
+
+const initials = site.name
+  .split(" ")
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((part) => part[0]?.toUpperCase() ?? "")
+  .join("");
+
+const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+
+const links = [
+  { href: "/#apps", label: "Apps" },
+  { href: "/about", label: "About me", current: path === "/about" },
+  { href: "/about#contact", label: "Contact" },
+];
+---
+
+<header class="site-header">
+  <div class="wrap header-bar">
+    <a class="brand" href="/">
+      {
+        photo ? (
+          <img class="portrait" src={`/${photo}`} alt="" width="40" height="40" />
+        ) : (
+          <span class="portrait portrait-fallback" aria-hidden="true">
+            {initials}
+          </span>
+        )
+      }
+      <span class="site-name">{site.name}</span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      {
+        links.map((link) => (
+          <a href={link.href} aria-current={link.current ? "page" : undefined}>
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,30 @@
+---
+import { contactLinks } from "../data/site";
+
+const links = contactLinks();
+const show = links.length > 0 || import.meta.env.DEV;
+---
+
+{
+  show && (
+    <section id="contact" aria-labelledby="contact-title">
+      <div class="wrap">
+        <h2 id="contact-title">Contact</h2>
+        {links.length > 0 ? (
+          <p class="contact-links">
+            {links.map((link) => (
+              <a href={link.href} rel="me noreferrer">
+                {link.label}
+              </a>
+            ))}
+          </p>
+        ) : (
+          <p class="dev-note">
+            Add LinkedIn, GitHub, and email in src/data/site.ts. This section stays off the
+            production site until a link exists.
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}

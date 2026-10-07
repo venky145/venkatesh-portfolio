@@ -1,0 +1,29 @@
+---
+import { contactLinks, site } from "../data/site";
+
+const profiles = contactLinks().filter(
+  (link) => !link.href.startsWith("mailto:") && !link.href.startsWith("tel:"),
+);
+---
+
+<section class="hero" aria-labelledby="intro-title">
+  <div class="wrap">
+    <h1 id="intro-title">{site.name}</h1>
+    <p class="role">{site.role}</p>
+    <p class="years">
+      {site.location} · {site.years}
+    </p>
+    <p class="focus-line">{site.focus.join(" · ")}</p>
+    <p class="statement">{site.statement}</p>
+    <p class="actions">
+      <a href="#work">View My Work</a>
+      {
+        profiles.map((link) => (
+          <a href={link.href} rel="me noreferrer">
+            {link.label}
+          </a>
+        ))
+      }
+    </p>
+  </div>
+</section>

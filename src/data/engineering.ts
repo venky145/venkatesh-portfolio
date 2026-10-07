@@ -1,0 +1,23 @@
+/** Practice areas to show by name. No proficiency scores. */
+export const engineeringAreas = [
+  "Swift",
+  "SwiftUI",
+  "Objective-C",
+  "React Native",
+  "iOS",
+  "tvOS",
+  "AVPlayer / HLS",
+  "FairPlay DRM",
+  "OTT / Video Streaming",
+  "Payments",
+  "Mobile banking",
+  "Crypto & Trading",
+  "IoT / BLE",
+  "Health AI",
+  "OAuth & App Security",
+  "MVVM",
+  "Server-Driven UI",
+  "XCTest",
+  "CI/CD",
+  "MCP / AI Testing",
+] as const;

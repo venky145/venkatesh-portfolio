@@ -1,0 +1,56 @@
+---
+import { experience } from "../data/experience";
+
+const show = experience.length > 0 || import.meta.env.DEV;
+---
+
+{
+  show && (
+    <section id="experience" aria-labelledby="experience-title">
+      <div class="wrap">
+        <h2 id="experience-title">Experience</h2>
+        {experience.length === 0 ? (
+          <p class="dev-note">
+            Add companies, roles, dates, and a sentence or two in src/data/experience.ts.
+            This section stays off the production site until an entry exists.
+          </p>
+        ) : (
+          <ol class="timeline">
+            {experience.map((entry) => (
+              <li>
+                <p class="when">
+                  {entry.start} – {entry.end}
+                  <span class="where">{entry.location}</span>
+                </p>
+                <div>
+                  <h3>{entry.company}</h3>
+                  <p class="company">{entry.role}</p>
+                  <p class="domain">{entry.domain}</p>
+                  <p class="summary">{entry.summary}</p>
+                  {entry.highlights.length > 0 && (
+                    <ul class="points">
+                      {entry.highlights.map((point) => (
+                        <li>
+                          {point.text}
+                          {point.children && point.children.length > 0 && (
+                            <ul>
+                              {point.children.map((child) => (
+                                <li>{child}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {entry.workedOn && <p class="worked-on">Worked on: {entry.workedOn}</p>}
+                  <p class="tech">Stack: {entry.stack}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </section>
+  )
+}
