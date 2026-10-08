@@ -3,7 +3,7 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://venkateshmandapati.com",
+  site: "https://www.venkateshmandapati.com",
   devToolbar: {
     enabled: false,
   },
