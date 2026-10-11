@@ -69,6 +69,22 @@ const personalFeatures = featureProjects.filter((project) => project.data.kind =
         </ul>
       </div>
       <AppCarousel projects={projects} />
+      <div class="feature-pager">
+        <div class="feature-pager-bar">
+          <p class="feature-pager-count" data-pager-count aria-live="polite"></p>
+          <div class="carousel-controls">
+            <button type="button" data-page="prev" aria-label="Previous app">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+            <button type="button" data-page="next" aria-label="Next app">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
       <div class="features">
         <TabbedFeature group={ottTabs} tone={1} />
         {
@@ -90,6 +106,8 @@ const personalFeatures = featureProjects.filter((project) => project.data.kind =
           ))
         }
       </div>
+        <div class="page-control" data-pager-dots role="group" aria-label="Choose an app"></div>
+      </div>
     </div>
   </section>
 
@@ -108,8 +126,90 @@ const personalFeatures = featureProjects.filter((project) => project.data.kind =
 <script>
   const track = document.querySelector<HTMLElement>(".carousel-track");
   const filters = document.querySelectorAll<HTMLButtonElement>(".filters [data-filter]");
+  const pager = document.querySelector<HTMLElement>(".feature-pager");
+  const pagerCount = pager?.querySelector<HTMLElement>("[data-pager-count]");
+  const pagerDots = pager?.querySelector<HTMLElement>("[data-pager-dots]");
+  const pageButtons = pager?.querySelectorAll<HTMLButtonElement>("[data-page]");
+  let page = 0;
 
-  function applyFilter(kind: string) {
+  function visibleFeatures() {
+    return [...document.querySelectorAll<HTMLElement>(".feature")].filter((element) => !element.hidden);
+  }
+
+  function featureTitle(feature: HTMLElement) {
+    const heading =
+      feature.querySelector<HTMLElement>('[role="tabpanel"]:not([hidden]) h2') ??
+      feature.querySelector("h2");
+    return heading?.textContent?.trim() || "App";
+  }
+
+  function showPage(next: number, options?: { scroll?: boolean }) {
+    const features = visibleFeatures();
+    document.querySelectorAll<HTMLElement>(".feature.is-current").forEach((element) => {
+      if (element.hidden) element.classList.remove("is-current");
+    });
+
+    if (!features.length) {
+      pager?.classList.add("is-ready");
+      if (pagerCount) pagerCount.textContent = "";
+      pagerDots?.replaceChildren();
+      pageButtons?.forEach((button) => {
+        button.disabled = true;
+      });
+      return;
+    }
+
+    page = Math.min(Math.max(next, 0), features.length - 1);
+    features.forEach((feature, index) => {
+      const current = index === page;
+      feature.classList.toggle("is-current", current);
+      if (current) {
+        feature.classList.add("is-in");
+        feature.classList.remove("reveal");
+      }
+    });
+    pager?.classList.add("is-ready");
+
+    if (pagerCount) {
+      pagerCount.textContent = `${page + 1} of ${features.length} · ${featureTitle(features[page])}`;
+    }
+
+    if (pagerDots) {
+      pagerDots.replaceChildren();
+      features.forEach((feature, index) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.setAttribute("aria-label", featureTitle(feature));
+        if (index === page) dot.setAttribute("aria-current", "true");
+        dot.addEventListener("click", () => showPage(index, { scroll: true }));
+        pagerDots.append(dot);
+      });
+    }
+
+    pageButtons?.forEach((button) => {
+      const direction = button.dataset.page;
+      button.disabled =
+        features.length < 2 || (direction === "prev" && page === 0) || (direction === "next" && page === features.length - 1);
+    });
+
+    if (options?.scroll && pager) {
+      const top = pager.getBoundingClientRect().top;
+      if (top < 64 || top > window.innerHeight * 0.4) {
+        pager.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }
+
+  function showFeature(feature: HTMLElement, options?: { scroll?: boolean }) {
+    if (feature.hidden) {
+      const kind = feature.dataset.kind;
+      if (kind) setFilter(kind);
+    }
+    const index = visibleFeatures().indexOf(feature);
+    if (index >= 0) showPage(index, options);
+  }
+
+  function setFilter(kind: string) {
     document.querySelectorAll<HTMLElement>("[data-kind]").forEach((element) => {
       const match = kind === "all" || element.dataset.kind === kind;
       element.hidden = !match;
@@ -119,14 +219,12 @@ const personalFeatures = featureProjects.filter((project) => project.data.kind =
       button.setAttribute("aria-pressed", button.dataset.filter === kind ? "true" : "false");
     });
 
-    const visible = [...document.querySelectorAll<HTMLElement>(".feature")].filter(
-      (element) => !element.hidden,
-    );
-    visible.forEach((element, index) => {
-      element.classList.toggle("flip", index % 2 === 1);
-    });
-
     track?.scrollTo({ left: 0 });
+  }
+
+  function applyFilter(kind: string) {
+    setFilter(kind);
+    showPage(0);
   }
 
   filters.forEach((button) => {
@@ -266,13 +364,49 @@ const personalFeatures = featureProjects.filter((project) => project.data.kind =
     attachStage(stage).setShots(readShots(stage.dataset.shots));
   });
 
-  function openTabFromHash() {
+  function openFromHash(scroll: boolean) {
     const id = location.hash.replace("#", "");
-    const tab = id ? document.getElementById(id) : null;
-    if (tab?.getAttribute("role") !== "tab") return;
-    tab.click();
+    if (!id) return;
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    if (target.getAttribute("role") === "tab") {
+      const feature = target.closest<HTMLElement>(".feature");
+      if (feature) showFeature(feature, { scroll });
+      target.click();
+      showPage(page);
+      return;
+    }
+
+    if (target.classList.contains("feature")) showFeature(target, { scroll });
   }
 
-  openTabFromHash();
-  window.addEventListener("hashchange", openTabFromHash);
+  pageButtons?.forEach((button) => {
+    button.addEventListener("click", () => {
+      const direction = button.dataset.page === "next" ? 1 : -1;
+      showPage(page + direction, { scroll: true });
+    });
+  });
+
+  document.querySelectorAll<HTMLAnchorElement>(".app-card").forEach((card) => {
+    card.addEventListener("click", (event) => {
+      const href = card.getAttribute("href") ?? "";
+      if (!href.startsWith("#")) return;
+      const feature = document.getElementById(href.slice(1));
+      if (!feature?.classList.contains("feature")) return;
+      event.preventDefault();
+      history.pushState(null, "", href);
+      showFeature(feature, { scroll: true });
+    });
+  });
+
+  pager?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || !target.closest('[role="tab"]')) return;
+    queueMicrotask(() => showPage(page));
+  });
+
+  showPage(0);
+  openFromHash(true);
+  window.addEventListener("hashchange", () => openFromHash(true));
 </script>

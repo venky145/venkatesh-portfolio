@@ -54,8 +54,9 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
-    <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#fafaf8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     {canonical && <link rel="canonical" href={canonical} />}
     <meta property="og:title" content={pageTitle} />
@@ -83,6 +84,37 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
         rel.add("noreferrer");
         anchor.setAttribute("rel", [...rel].join(" "));
       }
+    </script>
+    <script is:inline>
+      (function () {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        if (!("IntersectionObserver" in window)) return;
+
+        var nodes = document.querySelectorAll(
+          ".company-strip, .apps-head, .carousel-viewport, .feature-pager, .home-close, #work, #experience, #engineering, .about, #contact, .case-study .wrap > *, .site-footer",
+        );
+        var observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add("is-in");
+              observer.unobserve(entry.target);
+            });
+          },
+          { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+        );
+
+        nodes.forEach(function (node) {
+          var rect = node.getBoundingClientRect();
+          var inView = rect.top < window.innerHeight * 0.92 && rect.bottom > 0;
+          if (inView) {
+            node.classList.add("is-in");
+            return;
+          }
+          node.classList.add("reveal");
+          observer.observe(node);
+        });
+      })();
     </script>
   </body>
 </html>
