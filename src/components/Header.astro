@@ -1,6 +1,7 @@
 ---
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import SocialIcon from "./SocialIcon.astro";
 import { site } from "../data/site";
 
 const photo = ["portrait.jpg", "portrait.jpeg", "portrait.png", "portrait.webp"].find((file) =>
@@ -44,6 +45,13 @@ const links = [
             {link.label}
           </a>
         ))
+      }
+      {
+        site.linkedin && (
+          <a class="nav-linkedin" href={site.linkedin} aria-label="LinkedIn" rel="me noreferrer">
+            <SocialIcon name="linkedin" />
+          </a>
+        )
       }
     </nav>
   </div>

@@ -1,7 +1,13 @@
 ---
-import { contactLinks, site } from "../data/site";
+import SocialIcon from "./SocialIcon.astro";
+import { contactLinks, site, type ContactLink } from "../data/site";
 
 const links = contactLinks();
+const textLinks = links.filter((link) => !link.icon);
+const socialLinks = links.filter(
+  (link): link is ContactLink & { icon: "linkedin" | "github" | "medium" } =>
+    link.icon !== undefined,
+);
 const year = new Date().getFullYear();
 ---
 
@@ -10,11 +16,26 @@ const year = new Date().getFullYear();
     <p class="footer-name">{site.name}</p>
     <p>Senior Mobile Engineer — iOS & React Native</p>
     {
-      links.length > 0 && (
+      textLinks.length > 0 && (
         <ul class="footer-links">
-          {links.map((link) => (
+          {textLinks.map((link) => (
             <li>
-              <a href={link.href} rel="me noreferrer">{link.label}</a>
+              <a href={link.href} rel="me noreferrer">
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+    {
+      socialLinks.length > 0 && (
+        <ul class="footer-social">
+          {socialLinks.map((link) => (
+            <li>
+              <a href={link.href} aria-label={link.label} rel="me noreferrer">
+                <SocialIcon name={link.icon} />
+              </a>
             </li>
           ))}
         </ul>

@@ -131,6 +131,7 @@ const personalFeatures = featureProjects.filter((project) => project.data.kind =
   const pagerDots = pager?.querySelector<HTMLElement>("[data-pager-dots]");
   const pageButtons = pager?.querySelectorAll<HTMLButtonElement>("[data-page]");
   let page = 0;
+  let introduced = false;
 
   function visibleFeatures() {
     return [...document.querySelectorAll<HTMLElement>(".feature")].filter((element) => !element.hidden);
@@ -159,7 +160,10 @@ const personalFeatures = featureProjects.filter((project) => project.data.kind =
       return;
     }
 
-    page = Math.min(Math.max(next, 0), features.length - 1);
+    const target = Math.min(Math.max(next, 0), features.length - 1);
+    const same = target === page && features[target]?.classList.contains("is-current");
+    const backward = target < page;
+    page = target;
     features.forEach((feature, index) => {
       const current = index === page;
       feature.classList.toggle("is-current", current);
@@ -169,6 +173,20 @@ const personalFeatures = featureProjects.filter((project) => project.data.kind =
       }
     });
     pager?.classList.add("is-ready");
+
+    const current = features[page];
+    if (introduced && !same && current) {
+      current.classList.remove("is-appearing");
+      current.classList.toggle("is-back", backward);
+      void current.offsetWidth;
+      current.classList.add("is-appearing");
+      if (pagerCount) {
+        pagerCount.classList.remove("is-appearing");
+        void pagerCount.offsetWidth;
+        pagerCount.classList.add("is-appearing");
+      }
+    }
+    introduced = true;
 
     if (pagerCount) {
       pagerCount.textContent = `${page + 1} of ${features.length} · ${featureTitle(features[page])}`;

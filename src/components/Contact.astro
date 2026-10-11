@@ -1,7 +1,13 @@
 ---
-import { contactLinks } from "../data/site";
+import SocialIcon from "./SocialIcon.astro";
+import { contactLinks, type ContactLink } from "../data/site";
 
 const links = contactLinks();
+const textLinks = links.filter((link) => !link.icon);
+const socialLinks = links.filter(
+  (link): link is ContactLink & { icon: "linkedin" | "github" | "medium" } =>
+    link.icon !== undefined,
+);
 const show = links.length > 0 || import.meta.env.DEV;
 ---
 
@@ -12,11 +18,18 @@ const show = links.length > 0 || import.meta.env.DEV;
         <h2 id="contact-title">Contact</h2>
         {links.length > 0 ? (
           <p class="contact-links">
-            {links.map((link) => (
+            {textLinks.map((link) => (
               <a href={link.href} rel="me noreferrer">
                 {link.label}
               </a>
             ))}
+            <span class="icon-links">
+              {socialLinks.map((link) => (
+                <a href={link.href} class="icon-link" aria-label={link.label} rel="me noreferrer">
+                  <SocialIcon name={link.icon} />
+                </a>
+              ))}
+            </span>
           </p>
         ) : (
           <p class="dev-note">

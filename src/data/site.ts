@@ -18,6 +18,7 @@ export const site = {
 export type ContactLink = {
   label: string;
   href: string;
+  icon?: "linkedin" | "github" | "medium";
 };
 
 export function contactLinks(): ContactLink[] {
@@ -32,15 +33,15 @@ export function contactLinks(): ContactLink[] {
   }
 
   if (site.linkedin) {
-    links.push({ label: "LinkedIn", href: site.linkedin });
+    links.push({ label: "LinkedIn", href: site.linkedin, icon: "linkedin" });
   }
 
   if (site.github) {
-    links.push({ label: "GitHub", href: site.github });
+    links.push({ label: "GitHub", href: site.github, icon: "github" });
   }
 
   if (site.medium) {
-    links.push({ label: "Medium", href: site.medium });
+    links.push({ label: "Medium", href: site.medium, icon: "medium" });
   }
 
   return links;
